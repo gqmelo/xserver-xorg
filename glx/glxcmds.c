@@ -188,6 +188,11 @@ validGlxDrawable(ClientPtr client, XID id, int type, int access_mode,
 void
 __glXContextDestroy(__GLXcontext * context)
 {
+    __GLXcontext *lastglxc;
+    if (__glXLastContext != NULL && __glXLastContext != context) {
+        lastglxc = (__GLXcontext*)__glXLastContext;
+        (*lastglxc->loseCurrent) (lastglxc);
+    }
     __glXFlushContextCache();
 }
 
@@ -536,7 +541,7 @@ DoMakeCurrent(__GLXclientState * cl,
 {
     ClientPtr client = cl->client;
     xGLXMakeCurrentReply reply;
-    __GLXcontext *glxc, *prevglxc;
+    __GLXcontext *glxc, *prevglxc, *lastglxc = NULL;
     __GLXdrawable *drawPriv = NULL;
     __GLXdrawable *readPriv = NULL;
     int error;
@@ -627,11 +632,22 @@ DoMakeCurrent(__GLXclientState * cl,
         if (!(*prevglxc->loseCurrent) (prevglxc)) {
             return __glXError(GLXBadContext);
         }
-        __glXFlushContextCache();
         if (!prevglxc->isDirect) {
             prevglxc->drawPriv = NULL;
             prevglxc->readPriv = NULL;
         }
+    }
+
+    /*
+     ** __glXLastContext may be different than prevglxc, so we need lose it to
+     ** avoid a memory leak
+     */
+    if (__glXLastContext != NULL) {
+        lastglxc = (__GLXcontext*)__glXLastContext;
+        if (!lastglxc->isDirect && lastglxc != prevglxc) {
+            (*lastglxc->loseCurrent) (lastglxc);
+        }
+        __glXLastContext = NULL;
     }
 
     if ((glxc != 0) && !glxc->isDirect) {

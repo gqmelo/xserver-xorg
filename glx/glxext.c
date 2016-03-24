@@ -122,7 +122,7 @@ static int glxBlockClients;
 static Bool
 DrawableGone(__GLXdrawable * glxPriv, XID xid)
 {
-    __GLXcontext *c, *next;
+    __GLXcontext *c, *next, *lastglxc;
 
     if (glxPriv->type == GLX_DRAWABLE_WINDOW) {
         /* If this was created by glXCreateWindow, free the matching resource */
@@ -283,7 +283,7 @@ glxClientCallback(CallbackListPtr *list, pointer closure, pointer data)
     NewClientInfoRec *clientinfo = (NewClientInfoRec *) data;
     ClientPtr pClient = clientinfo->client;
     __GLXclientState *cl = glxGetClient(pClient);
-    __GLXcontext *c, *next;
+    __GLXcontext *c, *next, *lastglxc;
 
     switch (pClient->clientState) {
     case ClientStateRunning:
@@ -297,7 +297,9 @@ glxClientCallback(CallbackListPtr *list, pointer closure, pointer data)
             if (c->currentClient == pClient) {
                 c->loseCurrent(c);
                 c->currentClient = NULL;
-                __glXFreeContext(c);
+                if (c == __glXLastContext) {
+                    __glXFreeContext(c);
+                }
             }
         }
 
@@ -421,7 +423,7 @@ __glXFlushContextCache(void)
 __GLXcontext *
 __glXForceCurrent(__GLXclientState * cl, GLXContextTag tag, int *error)
 {
-    __GLXcontext *cx;
+    __GLXcontext *cx, *lastglxc = NULL;
 
     /*
      ** See if the context tag is legal; it is managed by the extension,
@@ -456,6 +458,10 @@ __glXForceCurrent(__GLXclientState * cl, GLXContextTag tag, int *error)
 
     /* Make this context the current one for the GL. */
     if (!cx->isDirect) {
+        if (__glXLastContext != NULL) {
+            lastglxc = (__GLXcontext*)__glXLastContext;
+            (*lastglxc->loseCurrent) (lastglxc);
+        }
         if (!(*cx->makeCurrent) (cx)) {
             /* Bind failed, and set the error code.  Bummer */
             cl->client->errorValue = cx->id;
