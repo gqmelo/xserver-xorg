@@ -118,7 +118,7 @@ static Bool
 DrawableGone(__GLXdrawable * glxPriv, XID xid)
 {
     LogMessageVerb(X_DEBUG, 4, "GLX: DrawableGone, glxPriv: %x, xid: %x\n", glxPriv, xid);
-    __GLXcontext *c, *next;
+    __GLXcontext *c, *next, *lastglxc;
 
     if (glxPriv->type == GLX_DRAWABLE_WINDOW) {
         LogMessageVerb(X_DEBUG, 4, "GLX: glxPriv->type == GLX_DRAWABLE_WINDOW\n");
@@ -151,6 +151,10 @@ DrawableGone(__GLXdrawable * glxPriv, XID xid)
             c->hasUnflushedCommands = GL_FALSE;
             /* just force a re-bind the next time through */
             (*c->loseCurrent) (c);
+            if (lastGLContext != NULL && lastGLContext != c) {
+                lastglxc = (__GLXcontext*)lastGLContext;
+                (*lastglxc->loseCurrent) (lastglxc);
+            }
             lastGLContext = NULL;
         }
         if (c->drawPriv == glxPriv)
@@ -297,7 +301,7 @@ glxClientCallback(CallbackListPtr *list, void *closure, void *data)
     NewClientInfoRec *clientinfo = (NewClientInfoRec *) data;
     ClientPtr pClient = clientinfo->client;
     __GLXclientState *cl = glxGetClient(pClient);
-    __GLXcontext *c, *next;
+    __GLXcontext *c, *next, *lastglxc;
 
     switch (pClient->clientState) {
     case ClientStateRunning:
@@ -310,6 +314,10 @@ glxClientCallback(CallbackListPtr *list, void *closure, void *data)
             next = c->next;
             if (c->currentClient == pClient) {
                 c->loseCurrent(c);
+                if (lastGLContext != NULL && lastGLContext != c) {
+                    lastglxc = (__GLXcontext*)lastGLContext;
+                    (*lastglxc->loseCurrent) (lastglxc);
+                }
                 lastGLContext = NULL;
                 c->currentClient = NULL;
                 FreeResourceByType(c->id, __glXContextRes, FALSE);
@@ -451,7 +459,7 @@ GlxExtensionInit(void)
 __GLXcontext *
 __glXForceCurrent(__GLXclientState * cl, GLXContextTag tag, int *error)
 {
-    __GLXcontext *cx;
+    __GLXcontext *cx, *lastglxc = NULL;
 
     /*
      ** See if the context tag is legal; it is managed by the extension,
@@ -486,6 +494,10 @@ __glXForceCurrent(__GLXclientState * cl, GLXContextTag tag, int *error)
 
     /* Make this context the current one for the GL. */
     if (!cx->isDirect) {
+        if (lastGLContext != NULL) {
+            lastglxc = (__GLXcontext*)lastGLContext;
+            (*lastglxc->loseCurrent) (lastglxc);
+        }
         lastGLContext = cx;
         if (!(*cx->makeCurrent) (cx)) {
             /* Bind failed, and set the error code.  Bummer */
