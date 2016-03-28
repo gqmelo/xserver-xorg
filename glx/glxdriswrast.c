@@ -90,25 +90,33 @@ struct __GLXDRIdrawable {
 static void
 __glXDRIdrawableDestroy(__GLXdrawable * drawable)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *private = (__GLXDRIdrawable *) drawable;
     const __DRIcoreExtension *core = private->screen->core;
 
+    LogMessageVerb(X_DEBUG, 4, "GLX: Destroying private->driDrawable: %x\n", private->driDrawable);
     (*core->destroyDrawable) (private->driDrawable);
 
+    LogMessageVerb(X_DEBUG, 4, "GLX: Freeing private->gc: %x\n", private->gc);
     FreeGC(private->gc, (GContext) 0);
+    LogMessageVerb(X_DEBUG, 4, "GLX: Freeing private->swapgc: %x\n", private->swapgc);
     FreeGC(private->swapgc, (GContext) 0);
 
+    LogMessageVerb(X_DEBUG, 4, "GLX: Releasing drawable: %x\n", drawable);
     __glXDrawableRelease(drawable);
 
+    LogMessageVerb(X_DEBUG, 4, "GLX: Freeing private: %x\n", private);
     free(private);
 }
 
 static GLboolean
 __glXDRIdrawableSwapBuffers(ClientPtr client, __GLXdrawable * drawable)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *private = (__GLXDRIdrawable *) drawable;
     const __DRIcoreExtension *core = private->screen->core;
 
+    LogMessageVerb(X_DEBUG, 4, "private->driDrawable: %x\n", private->driDrawable);
     (*core->swapBuffers) (private->driDrawable);
 
     return TRUE;
@@ -118,10 +126,12 @@ static void
 __glXDRIdrawableCopySubBuffer(__GLXdrawable * basePrivate,
                               int x, int y, int w, int h)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *private = (__GLXDRIdrawable *) basePrivate;
     const __DRIcopySubBufferExtension *copySubBuffer =
         private->screen->copySubBuffer;
 
+    LogMessageVerb(X_DEBUG, 4, "copySubBuffer: %x\n", copySubBuffer);
     if (copySubBuffer)
         (*copySubBuffer->copySubBuffer) (private->driDrawable, x, y, w, h);
 }
@@ -129,6 +139,7 @@ __glXDRIdrawableCopySubBuffer(__GLXdrawable * basePrivate,
 static void
 __glXDRIcontextDestroy(__GLXcontext * baseContext)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIcontext *context = (__GLXDRIcontext *) baseContext;
     __GLXDRIscreen *screen = (__GLXDRIscreen *) context->base.pGlxScreen;
 
@@ -140,6 +151,7 @@ __glXDRIcontextDestroy(__GLXcontext * baseContext)
 static int
 __glXDRIcontextMakeCurrent(__GLXcontext * baseContext)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIcontext *context = (__GLXDRIcontext *) baseContext;
     __GLXDRIdrawable *draw = (__GLXDRIdrawable *) baseContext->drawPriv;
     __GLXDRIdrawable *read = (__GLXDRIdrawable *) baseContext->readPriv;
@@ -152,6 +164,7 @@ __glXDRIcontextMakeCurrent(__GLXcontext * baseContext)
 static int
 __glXDRIcontextLoseCurrent(__GLXcontext * baseContext)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIcontext *context = (__GLXDRIcontext *) baseContext;
     __GLXDRIscreen *screen = (__GLXDRIscreen *) context->base.pGlxScreen;
 
@@ -162,6 +175,7 @@ static int
 __glXDRIcontextCopy(__GLXcontext * baseDst, __GLXcontext * baseSrc,
                     unsigned long mask)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIcontext *dst = (__GLXDRIcontext *) baseDst;
     __GLXDRIcontext *src = (__GLXDRIcontext *) baseSrc;
     __GLXDRIscreen *screen = (__GLXDRIscreen *) dst->base.pGlxScreen;
@@ -174,6 +188,7 @@ static int
 __glXDRIbindTexImage(__GLXcontext * baseContext,
                      int buffer, __GLXdrawable * glxPixmap)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *drawable = (__GLXDRIdrawable *) glxPixmap;
     const __DRItexBufferExtension *texBuffer = drawable->screen->texBuffer;
     __GLXDRIcontext *context = (__GLXDRIcontext *) baseContext;
@@ -199,6 +214,7 @@ static int
 __glXDRIreleaseTexImage(__GLXcontext * baseContext,
                         int buffer, __GLXdrawable * pixmap)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     /* FIXME: Just unbind the texture? */
     return Success;
 }
@@ -211,6 +227,7 @@ static __GLXtextureFromPixmap __glXDRItextureFromPixmap = {
 static void
 __glXDRIscreenDestroy(__GLXscreen * baseScreen)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     int i;
 
     __GLXDRIscreen *screen = (__GLXDRIscreen *) baseScreen;
@@ -238,6 +255,7 @@ __glXDRIscreenCreateContext(__GLXscreen * baseScreen,
                             const uint32_t *attribs,
                             int *error)
 {
+    LogMessageVerb(X_DEBUG, 4, "\n\n\n\n\n\n%s\n", __PRETTY_FUNCTION__);
     __GLXDRIscreen *screen = (__GLXDRIscreen *) baseScreen;
     __GLXDRIcontext *context, *shareContext;
     __GLXDRIconfig *config = (__GLXDRIconfig *) glxConfig;
@@ -281,6 +299,7 @@ __glXDRIscreenCreateDrawable(ClientPtr client,
                              XID drawId,
                              int type, XID glxDrawId, __GLXconfig * glxConfig)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     XID gcvals[2];
     int status;
     __GLXDRIscreen *driScreen = (__GLXDRIscreen *) screen;
@@ -321,6 +340,7 @@ static void
 swrastGetDrawableInfo(__DRIdrawable * draw,
                       int *x, int *y, int *w, int *h, void *loaderPrivate)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *drawable = loaderPrivate;
     DrawablePtr pDraw = drawable->base.pDraw;
 
@@ -334,6 +354,7 @@ static void
 swrastPutImage(__DRIdrawable * draw, int op,
                int x, int y, int w, int h, char *data, void *loaderPrivate)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *drawable = loaderPrivate;
     DrawablePtr pDraw = drawable->base.pDraw;
     GCPtr gc;
@@ -363,6 +384,7 @@ static void
 swrastGetImage(__DRIdrawable * draw,
                int x, int y, int w, int h, char *data, void *loaderPrivate)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     __GLXDRIdrawable *drawable = loaderPrivate;
     DrawablePtr pDraw = drawable->base.pDraw;
     ScreenPtr pScreen = pDraw->pScreen;
@@ -391,6 +413,7 @@ static const __DRIextension *loader_extensions[] = {
 static void
 initializeExtensions(__GLXDRIscreen * screen)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     const __DRIextension **extensions;
     int i;
 
@@ -418,6 +441,7 @@ extern glx_func_ptr glXGetProcAddressARB(const char *);
 static __GLXscreen *
 __glXDRIscreenProbe(ScreenPtr pScreen)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     const char *driverName = "swrast";
     __GLXDRIscreen *screen;
 

@@ -453,6 +453,8 @@ __glXLookupContextByTag(__GLXclientState * cl, GLXContextTag tag)
 static void
 StopUsingContext(__GLXcontext * glxc)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
+    LogMessageVerb(X_DEBUG, 4, "    glxc: %x\n", glxc);
     if (glxc) {
         glxc->currentClient = NULL;
         if (!glxc->idExists) {
@@ -464,6 +466,9 @@ StopUsingContext(__GLXcontext * glxc)
 static void
 StartUsingContext(__GLXclientState * cl, __GLXcontext * glxc)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
+    LogMessageVerb(X_DEBUG, 4, "    cl: %x\n", cl);
+    LogMessageVerb(X_DEBUG, 4, "    glxc: %x\n", glxc);
     glxc->currentClient = cl->client;
 }
 
@@ -480,6 +485,10 @@ __glXGetDrawable(__GLXcontext * glxc, GLXDrawable drawId, ClientPtr client,
     DrawablePtr pDraw;
     __GLXdrawable *pGlxDraw;
     int rc;
+
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
+    LogMessageVerb(X_DEBUG, 4, "    glxc: %x\n", glxc);
+    LogMessageVerb(X_DEBUG, 4, "    drawId: %x\n", drawId);
 
     if (validGlxDrawable(client, drawId, GLX_DRAWABLE_ANY,
                          DixWriteAccess, &pGlxDraw, &rc)) {
@@ -556,6 +565,8 @@ DoMakeCurrent(__GLXclientState * cl,
     __GLXdrawable *readPriv = NULL;
     int error;
     GLuint mask;
+
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
 
     /*
      ** If one is None and the other isn't, it's a bad match.
@@ -653,6 +664,8 @@ DoMakeCurrent(__GLXclientState * cl,
 
         glxc->drawPriv = drawPriv;
         glxc->readPriv = readPriv;
+        LogMessageVerb(X_DEBUG, 4, "    glxc->drawPriv: %x\n", glxc->drawPriv);
+        LogMessageVerb(X_DEBUG, 4, "    glxc->readPriv: %x\n", glxc->readPriv);
 
         /* make the context current */
         lastGLContext = glxc;
@@ -2015,6 +2028,7 @@ __glXDisp_GetDrawableAttributesSGIX(__GLXclientState * cl, GLbyte * pc)
 int
 __glXDisp_Render(__GLXclientState * cl, GLbyte * pc)
 {
+    LogMessageVerb(X_DEBUG, 4, "%s\n", __PRETTY_FUNCTION__);
     xGLXRenderReq *req;
     ClientPtr client = cl->client;
     int left, cmdlen, error;

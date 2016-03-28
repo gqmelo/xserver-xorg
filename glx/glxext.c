@@ -117,23 +117,35 @@ static int glxBlockClients;
 static Bool
 DrawableGone(__GLXdrawable * glxPriv, XID xid)
 {
+    LogMessageVerb(X_DEBUG, 4, "GLX: DrawableGone, glxPriv: %x, xid: %x\n", glxPriv, xid);
     __GLXcontext *c, *next;
 
     if (glxPriv->type == GLX_DRAWABLE_WINDOW) {
+        LogMessageVerb(X_DEBUG, 4, "GLX: glxPriv->type == GLX_DRAWABLE_WINDOW\n");
         /* If this was created by glXCreateWindow, free the matching resource */
         if (glxPriv->drawId != glxPriv->pDraw->id) {
-            if (xid == glxPriv->drawId)
+            LogMessageVerb(X_DEBUG, 4, "GLX: glxPriv->drawId != glxPriv->pDraw->id\n");
+            if (xid == glxPriv->drawId) {
+                LogMessageVerb(X_DEBUG, 4, "GLX: Freeing glxPriv->pDraw->id: %x\n", glxPriv->pDraw->id);
                 FreeResourceByType(glxPriv->pDraw->id, __glXDrawableRes, TRUE);
+            }
             else
+                LogMessageVerb(X_DEBUG, 4, "GLX: Freeing glxPriv->drawId: %x\n", glxPriv->drawId);
                 FreeResourceByType(glxPriv->drawId, __glXDrawableRes, TRUE);
         }
         /* otherwise this window was implicitly created by MakeCurrent */
     }
 
     for (c = glxAllContexts; c; c = next) {
+        LogMessageVerb(X_DEBUG, 4, "GLX: Checking context: %x\n", c->id);
+        LogMessageVerb(X_DEBUG, 4, "GLX: c->currentClient: %x\n", c->currentClient);
+        LogMessageVerb(X_DEBUG, 4, "GLX: c->drawPriv: %x\n", c->drawPriv);
+        LogMessageVerb(X_DEBUG, 4, "GLX: c->readPriv: %x\n", c->readPriv);
+        LogMessageVerb(X_DEBUG, 4, "GLX: glxPriv: %x\n", glxPriv);
         next = c->next;
         if (c->currentClient &&
 		(c->drawPriv == glxPriv || c->readPriv == glxPriv)) {
+            LogMessageVerb(X_DEBUG, 4, "GLX: Unbinding context\n");
             /* flush the context */
             glFlush();
             c->hasUnflushedCommands = GL_FALSE;
@@ -148,8 +160,13 @@ DrawableGone(__GLXdrawable * glxPriv, XID xid)
     }
 
     /* drop our reference to any backing pixmap */
-    if (glxPriv->type == GLX_DRAWABLE_PIXMAP)
+    if (glxPriv->type == GLX_DRAWABLE_PIXMAP) {
+        LogMessageVerb(X_DEBUG, 4, "GLX: Destroying pixmap\n");
         glxPriv->pDraw->pScreen->DestroyPixmap((PixmapPtr) glxPriv->pDraw);
+    }
+    else {
+        LogMessageVerb(X_DEBUG, 4, "GLX: Not destroying pixmap\n");
+    }
 
     glxPriv->destroy(glxPriv);
 

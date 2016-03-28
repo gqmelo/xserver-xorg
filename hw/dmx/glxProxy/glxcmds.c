@@ -2359,6 +2359,7 @@ __glXRender(__GLXclientState * cl, GLbyte * pc)
     int to_screen = 0;
     int s;
 
+    LogMessageVerb(X_DEBUG, 4, __PRETTY_FUNCTION__);
     /*
      ** NOTE: much of this code also appears in the byteswapping version of this
      ** routine, __glXSwapRender().  Any changes made here should also be
@@ -2417,6 +2418,7 @@ __glXRenderLarge(__GLXclientState * cl, GLbyte * pc)
     int to_screen = 0;
     int s;
 
+    LogMessageVerb(X_DEBUG, 4, __PRETTY_FUNCTION__);
     /*
      ** NOTE: much of this code also appears in the byteswapping version of this
      ** routine, __glXSwapRenderLarge().  Any changes made here should also be
