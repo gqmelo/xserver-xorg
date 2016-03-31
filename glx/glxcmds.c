@@ -659,10 +659,20 @@ DoMakeCurrent(__GLXclientState * cl,
         if (!(*prevglxc->loseCurrent) (prevglxc)) {
             return __glXError(GLXBadContext);
         }
-        lastGLContext = NULL;
-        if (!prevglxc->isDirect) {
-            prevglxc->drawPriv = NULL;
-            prevglxc->readPriv = NULL;
+    }
+
+    if (glxc) {
+        if (glxc->drawPriv && glxc->drawPriv->destroyLater) {
+            glxc->drawPriv->destroy(glxc->drawPriv);
+            if (glxc->readPriv == glxc->drawPriv) {
+                glxc->readPriv = NULL;
+            }
+            glxc->drawPriv = NULL;
+        }
+
+        if (glxc->readPriv && glxc->readPriv->destroyLater) {
+            glxc->readPriv->destroy(glxc->readPriv);
+            glxc->readPriv = NULL;
         }
     }
 
