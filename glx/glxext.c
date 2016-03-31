@@ -144,17 +144,21 @@ DrawableGone(__GLXdrawable * glxPriv, XID xid)
             if (c == __glXLastContext)
                 __glXFlushContextCache();
         }
-        if (c->drawPriv == glxPriv)
-            c->drawPriv = NULL;
-        if (c->readPriv == glxPriv)
-            c->readPriv = NULL;
+        if (c->drawPriv == glxPriv) {
+            glxPriv->destroyLater = GL_TRUE;
+        }
+        if (c->readPriv == glxPriv) {
+            glxPriv->destroyLater = GL_TRUE;
+        }
     }
 
     /* drop our reference to any backing pixmap */
     if (glxPriv->type == GLX_DRAWABLE_PIXMAP)
         glxPriv->pDraw->pScreen->DestroyPixmap((PixmapPtr) glxPriv->pDraw);
 
-    glxPriv->destroy(glxPriv);
+    if (!glxPriv->destroyLater) {
+        glxPriv->destroy(glxPriv);
+    }
 
     return True;
 }
@@ -213,6 +217,20 @@ __glXFreeContext(__GLXcontext * cx)
 
     if (!glxBlockClients) {
         __glXleaveServer(GL_FALSE);
+
+        if (cx->drawPriv && cx->drawPriv->destroyLater) {
+            cx->drawPriv->destroy(cx->drawPriv);
+            if (cx->readPriv == cx->drawPriv) {
+                cx->readPriv = NULL;
+            }
+            cx->drawPriv = NULL;
+        }
+
+        if (cx->readPriv && cx->readPriv->destroyLater) {
+            cx->readPriv->destroy(cx->readPriv);
+            cx->readPriv = NULL;
+        }
+
         cx->destroy(cx);
         __glXenterServer(GL_FALSE);
     }
@@ -504,6 +522,19 @@ glxResumeClients(void)
     __glXleaveServer(GL_FALSE);
     for (cx = glxPendingDestroyContexts; cx != NULL; cx = next) {
         next = cx->next;
+
+        if (cx->drawPriv && cx->drawPriv->destroyLater) {
+            cx->drawPriv->destroy(cx->drawPriv);
+            if (cx->readPriv == cx->drawPriv) {
+                cx->readPriv = NULL;
+            }
+            cx->drawPriv = NULL;
+        }
+
+        if (cx->readPriv && cx->readPriv->destroyLater) {
+            cx->readPriv->destroy(cx->readPriv);
+            cx->readPriv = NULL;
+        }
 
         cx->destroy(cx);
     }
