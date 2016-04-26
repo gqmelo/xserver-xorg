@@ -145,19 +145,13 @@ DrawableGone(__GLXdrawable * glxPriv, XID xid)
             }
             lastGLContext = NULL;
         }
-        if (c->drawPriv == glxPriv) {
-            glxPriv->destroyLater = GL_TRUE;
-        }
-        if (c->readPriv == glxPriv) {
-            glxPriv->destroyLater = GL_TRUE;
-        }
     }
 
     /* drop our reference to any backing pixmap */
     if (glxPriv->type == GLX_DRAWABLE_PIXMAP)
         glxPriv->pDraw->pScreen->DestroyPixmap((PixmapPtr) glxPriv->pDraw);
 
-    if (!glxPriv->destroyLater) {
+    if (--glxPriv->refcount == 0) {
         glxPriv->destroy(glxPriv);
     }
 
@@ -219,15 +213,12 @@ __glXFreeContext(__GLXcontext * cx)
     if (!glxBlockClients) {
         __glXleaveServer(GL_FALSE);
 
-        if (cx->drawPriv && cx->drawPriv->destroyLater) {
+        if (cx->drawPriv && --cx->drawPriv->refcount == 0) {
             cx->drawPriv->destroy(cx->drawPriv);
-            if (cx->readPriv == cx->drawPriv) {
-                cx->readPriv = NULL;
-            }
             cx->drawPriv = NULL;
         }
 
-        if (cx->readPriv && cx->readPriv->destroyLater) {
+        if (cx->readPriv && --cx->readPriv->refcount == 0) {
             cx->readPriv->destroy(cx->readPriv);
             cx->readPriv = NULL;
         }
@@ -543,15 +534,12 @@ glxResumeClients(void)
     for (cx = glxPendingDestroyContexts; cx != NULL; cx = next) {
         next = cx->next;
 
-        if (cx->drawPriv && cx->drawPriv->destroyLater) {
+        if (cx->drawPriv && --cx->drawPriv->refcount == 0) {
             cx->drawPriv->destroy(cx->drawPriv);
-            if (cx->readPriv == cx->drawPriv) {
-                cx->readPriv = NULL;
-            }
             cx->drawPriv = NULL;
         }
 
-        if (cx->readPriv && cx->readPriv->destroyLater) {
+        if (cx->readPriv && --cx->readPriv->refcount == 0) {
             cx->readPriv->destroy(cx->readPriv);
             cx->readPriv = NULL;
         }

@@ -59,7 +59,7 @@ struct __GLXdrawable {
      ** implementations (e.g. Mesa) does not free the associated framebuffer
      ** immediately
      */
-    GLboolean destroyLater;
+    int refcount;
 
     /*
      ** Either GLX_DRAWABLE_PIXMAP, GLX_DRAWABLE_WINDOW or

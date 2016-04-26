@@ -553,6 +553,7 @@ __glXGetDrawable(__GLXcontext * glxc, GLXDrawable drawId, ClientPtr client,
         return NULL;
     }
 
+    pGlxDraw->refcount++;
     return pGlxDraw;
 }
 
@@ -666,16 +667,18 @@ DoMakeCurrent(__GLXclientState * cl,
         }
     }
 
+    /*
+     ** We need to delay the previous glX drawable destruction until here, after
+     ** the new drawable was created to avoid the new one being allocated on the
+     ** same memory address (with Mesa).
+     */
     if (glxc) {
-        if (glxc->drawPriv && glxc->drawPriv->destroyLater) {
+        if (glxc->drawPriv && --glxc->drawPriv->refcount == 0) {
             glxc->drawPriv->destroy(glxc->drawPriv);
-            if (glxc->readPriv == glxc->drawPriv) {
-                glxc->readPriv = NULL;
-            }
             glxc->drawPriv = NULL;
         }
 
-        if (glxc->readPriv && glxc->readPriv->destroyLater) {
+        if (glxc->readPriv && --glxc->readPriv->refcount == 0) {
             glxc->readPriv->destroy(glxc->readPriv);
             glxc->readPriv = NULL;
         }
@@ -707,6 +710,8 @@ DoMakeCurrent(__GLXclientState * cl,
             return __glXError(GLXBadContext);
         }
 
+        glxc->drawPriv->refcount++;
+        glxc->readPriv->refcount++;
         glxc->currentClient = client;
     }
 
